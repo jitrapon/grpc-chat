@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "jt.chat.grpc";
+option java_outer_classname = "Protocol";
+
+package chat;
+
+service Chat {
+    // A simple RPC.
+    //
+    // Connects to a host with a given User details
+    rpc JoinRoom(JoinRoomRequest) returns (JoinRoomResponse) {}
+}
+
+// Object for all users
+message User {
+
+    // name as shown to all other users
+    string username = 1;
+}
+
+// Request to join a room hosted by an instance
+message JoinRoomRequest {
+    User user = 1;
+}
+
+// Response to be sent by the host to a join request
+//
+// It contains all the information for a room
+message JoinRoomResponse {
+    // whether or not this room requires a password to enter
+    bool is_password_required = 1;
+
+    // list of all users in this room
+    // only available if there are no errors when joining
+    repeated User user = 2;
+}
