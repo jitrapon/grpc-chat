@@ -12,19 +12,18 @@ object Commands {
 
     private const val PARAM_PREFIX_CHAR = ':'
 
-    private val map: HashMap<String, (List<String>) -> Unit> = HashMap()
+    private val map: HashMap<String, (List<String>) -> Boolean> = HashMap()
 
-    fun add(cmd: String, func: (args: List<String>) -> Unit) {
+    fun add(cmd: String, func: (args: List<String>) -> Boolean) {
         if (cmd.isEmpty()) throw Exception("Command must not be empty!")
         map.put(cmd, func)
     }
 
-    fun run(input: String) {
+    fun run(input: String): Boolean {
         for ((cmd, func) in map) {
             val (isValid, args) = extractCommand(input, cmd)
             if (isValid) {
-                func(args)
-                return
+                return func(args)
             }
         }
         throw NoCommandException("No command found for $input")
