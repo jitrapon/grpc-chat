@@ -6,6 +6,7 @@ package jt.chat.grpc;
 /**
  * <pre>
  * Response to be sent by the host to a join request
+ *
  * It contains all the information for a room
  * </pre>
  *
@@ -329,6 +330,7 @@ public  final class JoinRoomResponse extends
   /**
    * <pre>
    * Response to be sent by the host to a join request
+   *
    * It contains all the information for a room
    * </pre>
    *

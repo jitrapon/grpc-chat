@@ -10,30 +10,39 @@ import jt.chat.grpc.User
 import java.util.concurrent.TimeUnit
 
 /**
- * Client that connects to the server
+ * This class manages and controls the behavior of a client connected to a server
  */
-class Client(private var host: String, private var port: Int) {
+class Client(private val application: Application, private var host: String, private var port: Int) {
 
-    // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
-    // needing certificates.
+    /* Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
+    needing certificates. */
     private var channel: ManagedChannel = ManagedChannelBuilder.forAddress(host, port)
             .usePlaintext(true)
             .build()
     private var blockingStub: ChatGrpc.ChatBlockingStub
     private var asyncStub: ChatGrpc.ChatStub
 
+    private var shouldEndCmdLoop: Boolean = false
+
     /**
-     * Client state machine states
+     * Client state machine
      */
     enum class State {
         REQUEST_USERNAME,
         JOIN_ROOM,
-        JOINED_ROOM,
+        CONNECTED,
         LEAVE_ROOM,
-        LEFT_ROOM
+        DISCONNECTED
     }
 
+    /**
+     * The current state of the client
+     */
     private var state: State
+
+    /**
+     * The current username
+     */
     private var username: String?
 
     init {
@@ -43,61 +52,70 @@ class Client(private var host: String, private var port: Int) {
         username = null
     }
 
+    //region client functions
+
     fun shutdown(delay: Long = 0L) {
         channel.shutdown().awaitTermination(delay, TimeUnit.SECONDS)
     }
 
-    //region client functions
-
     /**
-     * Run the client state-machine loop
+     * Begins the client loop through the states
      */
-    fun run() {
-        loop@ while (true) {
+    fun start() {
+        while (!shouldEndCmdLoop) {
             when (state) {
-                Client.State.REQUEST_USERNAME -> {
-                    requestUsername(State.JOIN_ROOM)
-                }
-                Client.State.JOIN_ROOM -> {
-                    if (!joinRoom(State.JOINED_ROOM)) {
-                        break@loop
+                State.REQUEST_USERNAME -> {
+                    requestUsername {
+                        state = State.JOIN_ROOM
                     }
                 }
-                Client.State.JOINED_ROOM -> {
-                    sendMessage(State.LEAVE_ROOM)
+                State.JOIN_ROOM -> {
+                    joinRoom ({
+                        state = State.CONNECTED
+                    }, this::exitToMainCmdLoop)
                 }
-                Client.State.LEAVE_ROOM -> TODO()
-                Client.State.LEFT_ROOM -> TODO()
+                State.CONNECTED -> TODO()
+                State.LEAVE_ROOM -> TODO()
+                State.DISCONNECTED -> TODO()
             }
         }
     }
 
-    private fun requestUsername(nextState: State) {
-        print("Your name in the room will be: ")
+    /**
+     * Terminates client loop and resumes the main application loop
+     */
+    private fun exitToMainCmdLoop() {
+        shouldEndCmdLoop = true
+        application.runMainCmdLoop()
+    }
+
+    /**
+     * Asks user for a username to join a room
+     */
+    private fun requestUsername(onComplete: () -> Unit) {
+        print("Join room as ")
         readInput().let {
             username = it
-            state = nextState
+            onComplete()
         }
     }
 
-    private fun joinRoom(nextState: State): Boolean {
+    /**
+     * Joins a room using the specified username
+     */
+    private fun joinRoom(onComplete: () -> Unit, onFailure: () -> Unit) {
         println("Attempting to join room at $host on port $port...")
 
-        val request = JoinRoomRequest.newBuilder().setUser(User.newBuilder().setUsername(username).build()).build()
-        val response: JoinRoomResponse
         try {
-            response = blockingStub.joinRoom(request)
+            val request = JoinRoomRequest.newBuilder().setUser(User.newBuilder().setUsername(username).build()).build()
+            val response = blockingStub.joinRoom(request)
+            println("Response from server is $response")
+            onComplete()
         }
         catch (ex: StatusRuntimeException) {
-            System.err.println("RPC failed: ${ex.status}")
-            return false
+            System.err.println("Connection to server failed with status ${ex.status}")
+            onFailure()
         }
-        state = nextState
-        return true
-    }
-
-    private fun sendMessage(nextState: State) {
-
     }
 
     //endregion

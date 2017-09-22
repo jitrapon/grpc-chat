@@ -70,6 +70,7 @@ public final class ChatGrpc {
     /**
      * <pre>
      * A simple RPC.
+     *
      * Connects to a host with a given User details
      * </pre>
      */
@@ -112,6 +113,7 @@ public final class ChatGrpc {
     /**
      * <pre>
      * A simple RPC.
+     *
      * Connects to a host with a given User details
      * </pre>
      */
@@ -143,6 +145,7 @@ public final class ChatGrpc {
     /**
      * <pre>
      * A simple RPC.
+     *
      * Connects to a host with a given User details
      * </pre>
      */
@@ -173,6 +176,7 @@ public final class ChatGrpc {
     /**
      * <pre>
      * A simple RPC.
+     *
      * Connects to a host with a given User details
      * </pre>
      */
